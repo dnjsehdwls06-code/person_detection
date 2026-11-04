@@ -1,0 +1,14 @@
+{
+  "name": "person-detection-client",
+  "version": "1.0.0",
+  "private": true,
+  "description": "person_detection 웹 서버 (Express): 화면 제공, 로그인 쿠키, FastAPI 프록시",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2"
+  }
+}

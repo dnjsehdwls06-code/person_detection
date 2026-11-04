@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>person_detection · 카페 고객 분석</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <!-- 로그인 화면 -->
+  <section id="login-view" class="login-wrap hidden">
+    <form id="login-form" class="login-card">
+      <div class="brand big">☕ person_detection</div>
+      <p class="muted">카페·식당 이미지 얼굴 검출 및 고객 수 분석</p>
+      <label>아이디<input name="username" autocomplete="username" required></label>
+      <label>비밀번호<input name="password" type="password" autocomplete="current-password" required></label>
+      <button class="btn primary" type="submit">로그인</button>
+      <p id="login-error" class="error hidden"></p>
+      <p class="hint">테스트 계정: test / test</p>
+    </form>
+  </section>
+
+  <!-- 메인 레이아웃 -->
+  <div id="app-view" class="layout hidden">
+    <aside class="sidebar">
+      <div class="brand">☕ person_detection</div>
+      <nav>
+        <a href="#dashboard" data-view="dashboard">대시보드</a>
+        <a href="#analyze" data-view="analyze">이미지 분석</a>
+        <a href="#history" data-view="history">분석 이력</a>
+        <a href="#stats" data-view="stats">통계</a>
+        <a href="#users" data-view="users">사용자 관리</a>
+      </nav>
+      <div class="sidebar-foot">
+        <span id="whoami"></span>
+        <button id="logout-btn" class="btn ghost small">로그아웃</button>
+      </div>
+    </aside>
+
+    <main class="content">
+      <!-- 대시보드 -->
+      <section id="view-dashboard" class="view">
+        <h1>대시보드</h1>
+        <div class="cards">
+          <div class="card stat"><span>오늘 검출된 얼굴 수</span><strong id="sum-faces">-</strong></div>
+          <div class="card stat"><span>오늘 성공 분석</span><strong id="sum-ok">-</strong></div>
+          <div class="card stat"><span>오늘 실패 분석</span><strong id="sum-fail">-</strong></div>
+          <div class="card stat"><span>전체 분석 건수</span><strong id="sum-total">-</strong></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>최근 분석</h2><a class="btn small" href="#analyze">+ 새 분석</a></div>
+          <table class="table"><thead><tr><th>ID</th><th>분석 시각</th><th>파일</th><th>얼굴 수</th><th>상태</th></tr></thead>
+            <tbody id="recent-body"></tbody></table>
+        </div>
+      </section>
+
+      <!-- 이미지 업로드 및 분석 -->
+      <section id="view-analyze" class="view">
+        <h1>이미지 분석</h1>
+        <div class="grid2">
+          <form id="upload-form" class="card">
+            <h2>이미지 업로드</h2>
+            <label class="drop" id="drop">
+              <input type="file" id="file-input" accept=".jpg,.jpeg,.png,.webp,.bmp" hidden>
+              <img id="preview" class="preview hidden" alt="업로드 미리보기">
+              <span id="drop-text">클릭하거나 이미지를 끌어다 놓으세요<br><small>JPG, PNG, WEBP, BMP · 최대 10MB</small></span>
+            </label>
+            <button class="btn primary" id="analyze-btn" type="submit">얼굴 검출 분석</button>
+            <p id="upload-error" class="error hidden"></p>
+          </form>
+          <div class="card" id="analyze-result">
+            <h2>분석 결과</h2>
+            <p class="muted">이미지를 업로드하면 결과가 여기에 표시됩니다.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 분석 결과 상세 -->
+      <section id="view-result" class="view">
+        <h1>분석 결과</h1>
+        <div class="card" id="result-detail"></div>
+      </section>
+
+      <!-- 분석 이력 -->
+      <section id="view-history" class="view">
+        <h1>분석 이력</h1>
+        <form id="history-form" class="card filters">
+          <label>시작일<input type="date" name="start"></label>
+          <label>종료일<input type="date" name="end"></label>
+          <label>정렬<select name="order"><option value="desc">최신순</option><option value="asc">오래된 순</option></select></label>
+          <button class="btn primary" type="submit">조회</button>
+        </form>
+        <p id="history-error" class="error hidden"></p>
+        <div class="card">
+          <table class="table"><thead><tr><th>ID</th><th>분석 시각</th><th>파일</th><th>얼굴 수</th><th>상태</th><th>비고</th><th></th></tr></thead>
+            <tbody id="history-body"></tbody></table>
+        </div>
+      </section>
+
+      <!-- 통계 -->
+      <section id="view-stats" class="view">
+        <h1>고객 수 통계</h1>
+        <form id="stats-form" class="card filters">
+          <label>시작일<input type="date" name="start" required></label>
+          <label>종료일<input type="date" name="end" required></label>
+          <div class="toggle">
+            <label><input type="radio" name="unit" value="hour" checked> 시간대별</label>
+            <label><input type="radio" name="unit" value="day"> 일별</label>
+          </div>
+          <button class="btn primary" type="submit">조회</button>
+          <button class="btn" type="button" id="csv-btn">CSV 다운로드</button>
+        </form>
+        <p id="stats-error" class="error hidden"></p>
+        <div class="card">
+          <div class="card-head"><h2 id="stats-title">통계</h2><span id="stats-total" class="pill"></span></div>
+          <div class="chart-box"><canvas id="stats-chart"></canvas></div>
+          <p class="notice">※ 성공한 분석의 <b>검출된 얼굴 수</b> 합계입니다. 실패한 분석은 제외되며, 같은 고객이 여러 이미지에 찍히면 중복 집계될 수 있어 실제 방문 고객 수와 다를 수 있습니다.</p>
+          <table class="table"><thead><tr><th id="stats-col">구간</th><th>얼굴 수 합계</th><th>성공 분석 건수</th></tr></thead>
+            <tbody id="stats-body"></tbody></table>
+        </div>
+      </section>
+
+      <!-- 사용자 관리 -->
+      <section id="view-users" class="view">
+        <h1>사용자 관리</h1>
+        <div class="grid2">
+          <form id="profile-form" class="card">
+            <h2>내 정보</h2>
+            <p class="muted" id="profile-info"></p>
+            <label>표시 이름<input name="display_name" required maxlength="30"></label>
+            <button class="btn primary" type="submit">이름 저장</button>
+            <hr>
+            <label>현재 비밀번호<input name="current_password" type="password"></label>
+            <label>새 비밀번호<input name="new_password" type="password" minlength="4"></label>
+            <button class="btn" type="button" id="pw-btn">비밀번호 변경</button>
+            <hr>
+            <button class="btn danger" type="button" id="delete-btn">계정 삭제</button>
+          </form>
+          <form id="register-form" class="card">
+            <h2>새 사용자 등록</h2>
+            <label>아이디<input name="username" required pattern="[A-Za-z0-9_]{3,30}" title="영문/숫자/_ 3~30자"></label>
+            <label>비밀번호<input name="password" type="password" required minlength="4"></label>
+            <label>표시 이름<input name="display_name" required maxlength="30"></label>
+            <button class="btn primary" type="submit">등록</button>
+            <p class="muted">각 사용자는 본인의 분석 이력과 통계만 볼 수 있습니다.</p>
+          </form>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+  <div id="loading" class="loading hidden"><div class="spinner"></div><span>처리 중입니다…</span></div>
+  <script src="js/app.js"></script>
+</body>
+</html>

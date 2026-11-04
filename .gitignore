@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Node
+node_modules/
+
+# 환경변수
+.env
+
+# 실행 중 생성되는 데이터 (스키마는 database/schema.sql 로 관리)
+database/*.db
+database/*.db-journal
+server/uploads/
+
+# 모델 가중치 (README 의 다운로드 명령으로 준비)
+server/models/*.pt
+
+# 기타
+.DS_Store
+Thumbs.db
